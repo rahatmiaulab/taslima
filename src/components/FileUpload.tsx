@@ -3,12 +3,14 @@ import { Upload, X, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import QRCode from "qrcode";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const FileUpload = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [shareLink, setShareLink] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -44,12 +46,48 @@ export const FileUpload = () => {
       return;
     }
 
-    // In a real app, this would upload to a server and get a real link
-    const mockShareLink = `${window.location.origin}/download/${Math.random().toString(36).substring(7)}`;
-    setShareLink(mockShareLink);
+    setIsUploading(true);
 
     try {
-      const qr = await QRCode.toDataURL(mockShareLink, {
+      // Generate unique share code
+      const { data: codeData, error: codeError } = await supabase
+        .rpc('generate_share_code');
+
+      if (codeError) throw codeError;
+
+      const shareCode = codeData;
+      const fileExt = selectedFile.name.split('.').pop();
+      const storagePath = `${shareCode}.${fileExt}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('shared-files')
+        .upload(storagePath, selectedFile, {
+          cacheControl: '172800', // 48 hours
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Save metadata to database
+      const { error: dbError } = await supabase
+        .from('shared_files')
+        .insert({
+          file_name: selectedFile.name,
+          file_size: selectedFile.size,
+          file_type: selectedFile.type,
+          storage_path: storagePath,
+          share_code: shareCode,
+        });
+
+      if (dbError) throw dbError;
+
+      // Generate share link
+      const link = `${window.location.origin}/?code=${shareCode}`;
+      setShareLink(link);
+
+      // Generate QR code
+      const qr = await QRCode.toDataURL(link, {
         width: 256,
         margin: 2,
         color: {
@@ -58,10 +96,12 @@ export const FileUpload = () => {
         },
       });
       setQrCodeUrl(qr);
-      toast.success("QR Code generated successfully!");
-    } catch (err) {
-      toast.error("Failed to generate QR code");
+      toast.success("File uploaded successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload file");
       console.error(err);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -117,7 +157,7 @@ export const FileUpload = () => {
               <Upload className="w-8 h-8 text-white/60" />
             </div>
             <p className="text-lg font-medium text-white mb-2">Click to browse or drag & drop</p>
-            <p className="text-sm text-white/60">All file types • No size limit</p>
+            <p className="text-sm text-white/60">All file types • Max 500MB</p>
             <input
               type="file"
               onChange={handleFileSelect}
@@ -154,6 +194,7 @@ export const FileUpload = () => {
                 size="icon"
                 onClick={removeFile}
                 className="text-white/60 hover:text-white hover:bg-white/10"
+                disabled={isUploading}
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -162,11 +203,12 @@ export const FileUpload = () => {
             {!qrCodeUrl ? (
               <Button
                 onClick={generateQRCode}
+                disabled={isUploading}
                 size="lg"
                 className="w-full bg-gradient-to-r from-gradient-purple to-gradient-pink hover:opacity-90 text-white shadow-lg"
               >
                 <Upload className="w-5 h-5 mr-2" />
-                Upload & Generate QR Code
+                {isUploading ? "Uploading..." : "Upload & Generate QR Code"}
               </Button>
             ) : (
               <div className="space-y-4">

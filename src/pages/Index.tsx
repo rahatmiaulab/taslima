@@ -1,10 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Zap } from "lucide-react";
 import { FileUpload } from "@/components/FileUpload";
 import { FileDownload } from "@/components/FileDownload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
+  const [activeTab, setActiveTab] = useState("upload");
+  const [shareCode, setShareCode] = useState<string>("");
+
+  // Check for share code in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+      setShareCode(code);
+      setActiveTab("download");
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 py-12">
       <div className="w-full max-w-4xl mx-auto space-y-8">
@@ -25,7 +38,7 @@ const Index = () => {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="upload" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 glass-card p-1.5 mb-8 h-auto">
             <TabsTrigger 
               value="upload" 
@@ -46,7 +59,7 @@ const Index = () => {
           </TabsContent>
           
           <TabsContent value="download" className="mt-0">
-            <FileDownload />
+            <FileDownload initialCode={shareCode} />
           </TabsContent>
         </Tabs>
       </div>
