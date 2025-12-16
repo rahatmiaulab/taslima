@@ -2,108 +2,97 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 240 20% 98%;
-    --foreground: 240 10% 20%;
+    --background: 240 15% 6%;
+    --foreground: 240 10% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 20%;
+    --card: 240 15% 10%;
+    --card-foreground: 240 10% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 20%;
+    --popover: 240 15% 10%;
+    --popover-foreground: 240 10% 95%;
 
-    --primary: 280 80% 60%;
+    --primary: 280 85% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 330 80% 65%;
+    --secondary: 330 85% 60%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 240 10% 90%;
-    --muted-foreground: 240 5% 45%;
+    --muted: 240 10% 15%;
+    --muted-foreground: 240 5% 55%;
 
-    --accent: 210 80% 60%;
+    --accent: 200 90% 55%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 10% 85%;
-    --input: 240 10% 95%;
-    --ring: 280 80% 60%;
+    --border: 240 10% 18%;
+    --input: 240 10% 12%;
+    --ring: 280 85% 55%;
 
     --radius: 1rem;
     
     /* Custom gradient colors */
-    --gradient-pink: 330 80% 65%;
-    --gradient-purple: 280 80% 60%;
-    --gradient-blue: 210 80% 60%;
+    --gradient-pink: 330 85% 60%;
+    --gradient-purple: 280 85% 55%;
+    --gradient-blue: 200 90% 55%;
     
     /* Glass effect */
-    --glass-bg: 0 0% 100% / 0.1;
-    --glass-border: 0 0% 100% / 0.2;
+    --glass-bg: 240 15% 100% / 0.06;
+    --glass-border: 240 15% 100% / 0.1;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 240 15% 8%;
+    --sidebar-foreground: 240 5% 75%;
+    --sidebar-primary: 280 85% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 10% 15%;
+    --sidebar-accent-foreground: 240 5% 90%;
+    --sidebar-border: 240 10% 18%;
+    --sidebar-ring: 280 85% 55%;
   }
 
   .dark {
-    --background: 240 20% 10%;
+    --background: 240 15% 6%;
     --foreground: 240 10% 95%;
 
-    --card: 240 15% 15%;
+    --card: 240 15% 10%;
     --card-foreground: 240 10% 95%;
 
-    --popover: 240 15% 15%;
+    --popover: 240 15% 10%;
     --popover-foreground: 240 10% 95%;
 
-    --primary: 280 80% 60%;
+    --primary: 280 85% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 330 80% 65%;
+    --secondary: 330 85% 60%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 240 10% 20%;
-    --muted-foreground: 240 5% 60%;
+    --muted: 240 10% 15%;
+    --muted-foreground: 240 5% 55%;
 
-    --accent: 210 80% 60%;
+    --accent: 200 90% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 10% 25%;
-    --input: 240 10% 20%;
-    --ring: 280 80% 60%;
+    --border: 240 10% 18%;
+    --input: 240 10% 12%;
+    --ring: 280 85% 55%;
     
-    --glass-bg: 0 0% 100% / 0.05;
-    --glass-border: 0 0% 100% / 0.1;
+    --glass-bg: 240 15% 100% / 0.04;
+    --glass-border: 240 15% 100% / 0.08;
     
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-background: 240 15% 8%;
+    --sidebar-foreground: 240 5% 75%;
+    --sidebar-primary: 280 85% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 240 10% 15%;
+    --sidebar-accent-foreground: 240 5% 90%;
+    --sidebar-border: 240 10% 18%;
+    --sidebar-ring: 280 85% 55%;
   }
 }
 
@@ -113,8 +102,12 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
-    background: linear-gradient(135deg, hsl(var(--gradient-pink)) 0%, hsl(var(--gradient-purple)) 50%, hsl(var(--gradient-blue)) 100%);
+    @apply bg-background text-foreground antialiased;
+    background: 
+      radial-gradient(ellipse 80% 60% at 50% -20%, hsl(var(--gradient-purple) / 0.25), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 50%, hsl(var(--gradient-blue) / 0.15), transparent),
+      radial-gradient(ellipse 60% 40% at 0% 80%, hsl(var(--gradient-pink) / 0.15), transparent),
+      hsl(var(--background));
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -123,14 +116,21 @@ All colors MUST be HSL.
 @layer utilities {
   .glass-card {
     background: hsl(var(--glass-bg));
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(24px);
     border: 1px solid hsl(var(--glass-border));
   }
   
   .gradient-text {
-    background: linear-gradient(135deg, hsl(var(--gradient-pink)), hsl(var(--gradient-purple)));
+    background: linear-gradient(135deg, hsl(var(--gradient-pink)), hsl(var(--gradient-purple)), hsl(var(--gradient-blue)));
+    background-size: 200% 200%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    animation: gradient-shift 6s ease infinite;
+  }
+  
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
   }
 }
