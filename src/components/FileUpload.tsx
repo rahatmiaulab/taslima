@@ -1,14 +1,41 @@
 import { useState, useCallback } from "react";
-import { Upload, X, Download } from "lucide-react";
+import { Upload, X, Download, Copy, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import QRCode from "qrcode";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+// Allowed file types for security
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+  'application/pdf', 'text/plain', 'text/csv',
+  'application/zip', 'application/x-zip-compressed',
+  'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'audio/mpeg', 'audio/wav', 'audio/ogg',
+  'video/mp4', 'video/webm', 'video/quicktime'
+];
+
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
 
 export const FileUpload = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [shareLink, setShareLink] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const validateFile = (file: File): string | null => {
+    if (file.size > MAX_FILE_SIZE) {
+      return `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`;
+    }
+    if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
+      return "This file type is not allowed for security reasons";
+    }
+    return null;
+  };
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -27,6 +54,11 @@ export const FileUpload = () => {
 
     const files = e.dataTransfer.files;
     if (files && files[0]) {
+      const error = validateFile(files[0]);
+      if (error) {
+        toast.error(error);
+        return;
+      }
       setSelectedFile(files[0]);
     }
   }, []);
@@ -34,6 +66,11 @@ export const FileUpload = () => {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files[0]) {
+      const error = validateFile(files[0]);
+      if (error) {
+        toast.error(error);
+        return;
+      }
       setSelectedFile(files[0]);
     }
   };
@@ -44,24 +81,62 @@ export const FileUpload = () => {
       return;
     }
 
-    // In a real app, this would upload to a server and get a real link
-    const mockShareLink = `${window.location.origin}/download/${Math.random().toString(36).substring(7)}`;
-    setShareLink(mockShareLink);
+    setIsUploading(true);
 
     try {
-      const qr = await QRCode.toDataURL(mockShareLink, {
-        width: 256,
+      // Generate unique share code
+      const { data: codeData, error: codeError } = await supabase
+        .rpc('generate_share_code');
+
+      if (codeError) throw codeError;
+
+      const shareCode = codeData;
+      const fileExt = selectedFile.name.split('.').pop();
+      const storagePath = `${shareCode}.${fileExt}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('shared-files')
+        .upload(storagePath, selectedFile, {
+          cacheControl: '172800',
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Save metadata to database
+      const { error: dbError } = await supabase
+        .from('shared_files')
+        .insert({
+          file_name: selectedFile.name,
+          file_size: selectedFile.size,
+          file_type: selectedFile.type || 'application/octet-stream',
+          storage_path: storagePath,
+          share_code: shareCode,
+        });
+
+      if (dbError) throw dbError;
+
+      // Generate share link
+      const link = `${window.location.origin}/?code=${shareCode}`;
+      setShareLink(link);
+
+      // Generate QR code with modern styling
+      const qr = await QRCode.toDataURL(link, {
+        width: 280,
         margin: 2,
         color: {
-          dark: "#6B21A8",
+          dark: "#1a1a2e",
           light: "#FFFFFF",
         },
       });
       setQrCodeUrl(qr);
-      toast.success("QR Code generated successfully!");
-    } catch (err) {
-      toast.error("Failed to generate QR code");
+      toast.success("File uploaded successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload file");
       console.error(err);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -69,12 +144,15 @@ export const FileUpload = () => {
     setSelectedFile(null);
     setQrCodeUrl("");
     setShareLink("");
+    setCopied(false);
   };
 
-  const copyLink = () => {
+  const copyLink = async () => {
     if (shareLink) {
-      navigator.clipboard.writeText(shareLink);
-      toast.success("Link copied to clipboard!");
+      await navigator.clipboard.writeText(shareLink);
+      setCopied(true);
+      toast.success("Link copied!");
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -88,36 +166,25 @@ export const FileUpload = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-6">
-      <div className="glass-card rounded-3xl p-8 shadow-2xl">
-        <div className="flex items-center justify-center mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gradient-purple to-gradient-pink flex items-center justify-center shadow-lg">
-            <Upload className="w-8 h-8 text-white" />
-          </div>
-        </div>
-
-        <h2 className="text-3xl font-bold text-center mb-2 text-white">Upload Your File</h2>
-        <p className="text-center text-white/80 mb-8">
-          ✨ Share files securely • 🔒 Expires in 48 hours
-        </p>
-
+    <div className="space-y-6">
+      <div className="glass-card rounded-3xl p-6 md:p-8 shadow-2xl">
         {!selectedFile ? (
           <div
-            className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all ${
+            className={`relative border-2 border-dashed rounded-2xl p-8 md:p-12 text-center transition-all duration-300 ${
               isDragging
-                ? "border-primary bg-primary/10 scale-105"
-                : "border-white/30 bg-white/5 hover:border-white/50"
+                ? "border-primary bg-primary/10 scale-[1.02]"
+                : "border-white/20 hover:border-white/40 hover:bg-white/5"
             }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
           >
-            <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-white/10 flex items-center justify-center">
-              <Upload className="w-8 h-8 text-white/60" />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/30">
+              <Upload className="w-10 h-10 text-white" />
             </div>
-            <p className="text-lg font-medium text-white mb-2">Click to browse or drag & drop</p>
-            <p className="text-sm text-white/60">All file types • No size limit</p>
+            <h3 className="text-2xl font-bold text-white mb-2">Drop your file here</h3>
+            <p className="text-white/60 mb-6">or click to browse</p>
             <input
               type="file"
               onChange={handleFileSelect}
@@ -126,25 +193,31 @@ export const FileUpload = () => {
             />
             <label htmlFor="file-input" className="cursor-pointer">
               <Button
-                variant="secondary"
+                variant="outline"
                 size="lg"
-                className="mt-6 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                className="bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-white/40"
                 asChild
               >
-                <span>Browse Files</span>
+                <span>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Select File
+                </span>
               </Button>
             </label>
+            <p className="text-xs text-white/40 mt-6">
+              Images, documents, audio, video • Max 500MB
+            </p>
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="bg-white/10 rounded-2xl p-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gradient-purple to-gradient-pink flex items-center justify-center">
+            <div className="bg-white/5 rounded-2xl p-4 flex items-center justify-between border border-white/10">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
                   <Upload className="w-6 h-6 text-white" />
                 </div>
-                <div>
-                  <p className="font-medium text-white">{selectedFile.name}</p>
-                  <p className="text-sm text-white/60">
+                <div className="min-w-0">
+                  <p className="font-semibold text-white truncate">{selectedFile.name}</p>
+                  <p className="text-sm text-white/50">
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
@@ -153,7 +226,8 @@ export const FileUpload = () => {
                 variant="ghost"
                 size="icon"
                 onClick={removeFile}
-                className="text-white/60 hover:text-white hover:bg-white/10"
+                className="text-white/50 hover:text-white hover:bg-white/10 shrink-0"
+                disabled={isUploading}
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -162,46 +236,53 @@ export const FileUpload = () => {
             {!qrCodeUrl ? (
               <Button
                 onClick={generateQRCode}
+                disabled={isUploading}
                 size="lg"
-                className="w-full bg-gradient-to-r from-gradient-purple to-gradient-pink hover:opacity-90 text-white shadow-lg"
+                className="w-full h-14 bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white text-lg font-semibold shadow-lg shadow-primary/30"
               >
-                <Upload className="w-5 h-5 mr-2" />
-                Upload & Generate QR Code
+                {isUploading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Uploading...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5" />
+                    Generate QR Code
+                  </span>
+                )}
               </Button>
             ) : (
               <div className="space-y-4">
                 <div className="bg-white rounded-2xl p-6 flex flex-col items-center">
-                  <img src={qrCodeUrl} alt="QR Code" className="w-64 h-64 mb-4" />
-                  <p className="text-sm text-gray-600 text-center mb-4">
-                    Scan this QR code to download the file
+                  <img src={qrCodeUrl} alt="QR Code" className="w-56 h-56 mb-4" />
+                  <p className="text-sm text-gray-500 text-center">
+                    Scan to download instantly
                   </p>
-                  <div className="flex gap-2 w-full">
-                    <Button
-                      onClick={copyLink}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      Copy Link
-                    </Button>
-                    <Button
-                      onClick={downloadQR}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download QR
-                    </Button>
-                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={copyLink}
+                    variant="outline"
+                    className="h-12 bg-white/10 hover:bg-white/20 text-white border-white/20"
+                  >
+                    {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                    {copied ? "Copied!" : "Copy Link"}
+                  </Button>
+                  <Button
+                    onClick={downloadQR}
+                    variant="outline"
+                    className="h-12 bg-white/10 hover:bg-white/20 text-white border-white/20"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Save QR
+                  </Button>
                 </div>
               </div>
             )}
           </div>
         )}
       </div>
-
-      <p className="text-center text-white/60 text-sm">
-        Files are automatically deleted after 48 hours
-      </p>
     </div>
   );
 };
