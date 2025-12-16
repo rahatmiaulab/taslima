@@ -14,48 +14,13 @@ export type Database = {
   }
   public: {
     Tables: {
-      shared_files: {
-        Row: {
-          download_count: number | null
-          expires_at: string
-          file_name: string
-          file_size: number
-          file_type: string
-          id: string
-          share_code: string
-          storage_path: string
-          uploaded_at: string
-        }
-        Insert: {
-          download_count?: number | null
-          expires_at?: string
-          file_name: string
-          file_size: number
-          file_type: string
-          id?: string
-          share_code: string
-          storage_path: string
-          uploaded_at?: string
-        }
-        Update: {
-          download_count?: number | null
-          expires_at?: string
-          file_name?: string
-          file_size?: number
-          file_type?: string
-          id?: string
-          share_code?: string
-          storage_path?: string
-          uploaded_at?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      generate_share_code: { Args: never; Returns: string }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
