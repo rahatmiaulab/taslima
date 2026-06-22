@@ -24,8 +24,10 @@ export const FileUpload = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [shareLink, setShareLink] = useState<string>("");
+  const [shareCode, setShareCode] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   const validateFile = (file: File): string | null => {
     if (file.size > MAX_FILE_SIZE) {
@@ -131,6 +133,7 @@ export const FileUpload = () => {
         },
       });
       setQrCodeUrl(qr);
+      setShareCode(shareCode);
       toast.success("File uploaded successfully!");
     } catch (err: any) {
       toast.error(err.message || "Failed to upload file");
@@ -144,9 +147,19 @@ export const FileUpload = () => {
     setSelectedFile(null);
     setQrCodeUrl("");
     setShareLink("");
+    setShareCode("");
     setCopied(false);
+    setCodeCopied(false);
   };
 
+  const copyCode = async () => {
+    if (shareCode) {
+      await navigator.clipboard.writeText(shareCode);
+      setCodeCopied(true);
+      toast.success("Code copied!");
+      setTimeout(() => setCodeCopied(false), 2000);
+    }
+  };
   const copyLink = async () => {
     if (shareLink) {
       await navigator.clipboard.writeText(shareLink);
@@ -254,6 +267,19 @@ export const FileUpload = () => {
               </Button>
             ) : (
               <div className="space-y-4">
+                <div
+                  onClick={copyCode}
+                  className="bg-gradient-to-r from-primary/20 to-secondary/20 border border-white/20 rounded-2xl p-5 text-center cursor-pointer hover:from-primary/30 hover:to-secondary/30 transition-all"
+                >
+                  <p className="text-xs uppercase tracking-widest text-white/60 mb-2">Share code</p>
+                  <p className="text-4xl font-black tracking-[0.3em] text-white font-mono select-all">
+                    {shareCode.toUpperCase()}
+                  </p>
+                  <p className="text-xs text-white/50 mt-2 flex items-center justify-center gap-1.5">
+                    {codeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    {codeCopied ? "Copied!" : "Tap to copy code"}
+                  </p>
+                </div>
                 <div className="bg-white rounded-2xl p-6 flex flex-col items-center">
                   <img src={qrCodeUrl} alt="QR Code" className="w-56 h-56 mb-4" />
                   <p className="text-sm text-gray-500 text-center">

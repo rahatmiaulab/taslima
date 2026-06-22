@@ -20,15 +20,9 @@ export const TopDownloads = () => {
 
   const fetchTopFiles = async () => {
     try {
-      const { data, error } = await supabase
-        .from('shared_files')
-        .select('id, file_name, file_size, download_count, uploaded_at')
-        .gt('expires_at', new Date().toISOString())
-        .order('download_count', { ascending: false })
-        .limit(20);
-
+      const { data, error } = await supabase.rpc('get_top_downloads', { _limit: 20 });
       if (error) throw error;
-      setFiles(data || []);
+      setFiles((data as FileData[]) || []);
     } catch (err) {
       console.error('Failed to fetch top files:', err);
     } finally {

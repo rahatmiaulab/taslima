@@ -101,10 +101,11 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="border-t border-white/10 py-6">
-        <div className="container mx-auto px-4 text-center">
+        <div className="container mx-auto px-4 text-center space-y-2">
           <p className="text-sm text-white/40">
             Files are automatically deleted after 48 hours • All uploads are encrypted
           </p>
+          <a href="/admin" className="text-xs text-white/30 hover:text-white/60 transition-colors">Admin</a>
         </div>
       </footer>
     </div>
