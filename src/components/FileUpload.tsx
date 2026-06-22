@@ -160,18 +160,6 @@ export const FileUpload = () => {
       setTimeout(() => setCodeCopied(false), 2000);
     }
   };
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const removeFile = () => {
-    setSelectedFile(null);
-    setQrCodeUrl("");
-    setShareLink("");
-    setCopied(false);
-  };
-
   const copyLink = async () => {
     if (shareLink) {
       await navigator.clipboard.writeText(shareLink);
