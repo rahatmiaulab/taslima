@@ -133,10 +133,33 @@ export const FileUpload = () => {
         },
       });
       setQrCodeUrl(qr);
+      setShareCode(shareCode);
       toast.success("File uploaded successfully!");
     } catch (err: any) {
       toast.error(err.message || "Failed to upload file");
       console.error(err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+    setQrCodeUrl("");
+    setShareLink("");
+    setShareCode("");
+    setCopied(false);
+    setCodeCopied(false);
+  };
+
+  const copyCode = async () => {
+    if (shareCode) {
+      await navigator.clipboard.writeText(shareCode);
+      setCodeCopied(true);
+      toast.success("Code copied!");
+      setTimeout(() => setCodeCopied(false), 2000);
+    }
+  };
     } finally {
       setIsUploading(false);
     }
