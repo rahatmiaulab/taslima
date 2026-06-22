@@ -55,7 +55,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_expired_file_metadata: { Args: never; Returns: number }
       generate_share_code: { Args: never; Returns: string }
+      get_file_by_code: {
+        Args: { _code: string }
+        Returns: {
+          download_count: number
+          expires_at: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          share_code: string
+          storage_path: string
+          uploaded_at: string
+        }[]
+      }
+      get_top_downloads: {
+        Args: { _limit?: number }
+        Returns: {
+          download_count: number
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          share_code: string
+          uploaded_at: string
+        }[]
+      }
+      increment_download_count: { Args: { _code: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never
