@@ -31,8 +31,8 @@ const Index = () => {
                 <Zap className="w-7 h-7 text-white" />
               </div>
               <h1 className="text-4xl md:text-5xl font-black tracking-tight">
-                <span className="text-white">FAZ</span>
-                <span className="gradient-text">share</span>
+                <span className="text-white">taslima</span>
+                <span className="gradient-text"> share</span>
               </h1>
             </div>
             
