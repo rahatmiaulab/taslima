@@ -31,28 +31,17 @@ export const FileDownload = ({ initialCode }: FileDownloadProps) => {
     setIsSearching(true);
 
     try {
-      const { data, error } = await supabase
-        .from('shared_files')
-        .select('*')
-        .eq('share_code', searchCode.trim().toLowerCase())
-        .maybeSingle();
+      const { data, error } = await supabase.functions.invoke('get-download', {
+        body: { code: searchCode.trim().toLowerCase() },
+      });
 
-      if (error) throw error;
-
-      if (!data) {
-        toast.error("File not found or has expired");
+      if (error || !data?.signedUrl) {
+        toast.error(data?.error || "File not found or has expired");
         setFileInfo(null);
         return;
       }
 
-      // Check if file has expired
-      if (new Date(data.expires_at) < new Date()) {
-        toast.error("This file has expired and is no longer available");
-        setFileInfo(null);
-        return;
-      }
-
-      setFileInfo(data);
+      setFileInfo({ ...data.file, signedUrl: data.signedUrl });
       toast.success("File found!");
     } catch (err: any) {
       toast.error(err.message || "Failed to search for file");
@@ -64,22 +53,14 @@ export const FileDownload = ({ initialCode }: FileDownloadProps) => {
   };
 
   const handleDownload = async () => {
-    if (!fileInfo) return;
+    if (!fileInfo?.signedUrl) return;
 
     setIsDownloading(true);
 
     try {
-      // Use signed URL for secure download (bucket is now private)
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from('shared-files')
-        .createSignedUrl(fileInfo.storage_path, 300); // 5 minute expiry
-
-      if (signedError) throw signedError;
-
-      // Fetch the file
-      const response = await fetch(signedData.signedUrl);
+      const response = await fetch(fileInfo.signedUrl);
       if (!response.ok) throw new Error('Download failed');
-      
+
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -88,13 +69,6 @@ export const FileDownload = ({ initialCode }: FileDownloadProps) => {
       link.click();
       URL.revokeObjectURL(url);
 
-      // Update download count
-      await supabase
-        .from('shared_files')
-        .update({ download_count: fileInfo.download_count + 1 })
-        .eq('id', fileInfo.id);
-
-      setFileInfo({ ...fileInfo, download_count: fileInfo.download_count + 1 });
       toast.success("Download started!");
     } catch (err: any) {
       toast.error(err.message || "Failed to download file");

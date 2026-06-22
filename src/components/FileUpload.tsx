@@ -24,8 +24,10 @@ export const FileUpload = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [shareLink, setShareLink] = useState<string>("");
+  const [shareCode, setShareCode] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   const validateFile = (file: File): string | null => {
     if (file.size > MAX_FILE_SIZE) {
